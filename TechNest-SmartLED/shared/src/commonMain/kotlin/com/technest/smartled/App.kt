@@ -8,6 +8,7 @@ import com.technest.smartled.core.domain.Screen
 import com.technest.smartled.data.repository.DeviceRepositoryImpl
 import com.technest.smartled.data.transport.MockTransport
 import com.technest.smartled.feature.dashboard.DashboardScreen
+import com.technest.smartled.feature.dashboard.DashboardViewModel
 import com.technest.smartled.feature.devices.DevicesScreen
 import com.technest.smartled.feature.devices.DevicesViewModel
 import com.technest.smartled.feature.effects.EffectsScreen
@@ -19,6 +20,7 @@ fun App() {
     val transport = remember { MockTransport() }
     val repository = remember { DeviceRepositoryImpl(transport, transport) }
     val devicesViewModel = remember { DevicesViewModel(repository) }
+    val dashboardViewModel = remember { DashboardViewModel(repository) }
 
     LedTheme {
         var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
@@ -59,6 +61,7 @@ fun App() {
             ) {
                 when (currentScreen) {
                     is Screen.Dashboard -> DashboardScreen(
+                        viewModel = dashboardViewModel,
                         onNavigateToSettings = { currentScreen = Screen.Settings },
                     )
                     is Screen.Effects -> EffectsScreen()

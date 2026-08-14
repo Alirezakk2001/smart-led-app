@@ -1169,6 +1169,8 @@ Status as of the initial commit:
 - Device Management: **implemented** — MockTransport, DeviceRepositoryImpl, DevicesViewModel, DevicesScreen with scan/connect/disconnect UI, 40 passing tests
 - Exact package structure: **implemented** (see section 33)
 - Exact BLE services/characteristics: **pending hardware/application coordination**
+- Dashboard: **implemented** — DashboardViewModel with power/brightness/line/effect/color/speed controls, line selector (All + individual), LED preview, color picker, effect dropdown, 15 new tests
+- DeviceRepositoryImpl: **updated** — now tracks device state (power, brightness, lines) and emits state changes through the connected device flow
 
 
 # 38. Next Major Phase
