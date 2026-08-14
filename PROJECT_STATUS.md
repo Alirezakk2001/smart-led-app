@@ -1172,6 +1172,7 @@ Status as of the initial commit:
 - Dashboard: **implemented** — DashboardViewModel with power/brightness/line/effect/color/speed controls, line selector (All + individual), LED preview, color picker, effect dropdown, 15 new tests
 - DeviceRepositoryImpl: **updated** — now tracks device state (power, brightness, lines) and emits state changes through the connected device flow
 
+- Effects: **implemented** — EffectsViewModel with effect browsing, descriptions, per-effect parameter editor (speed sliders), apply-to-line and apply-to-all actions, 16 new tests
 
 # 38. Next Major Phase
 
