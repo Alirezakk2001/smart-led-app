@@ -13,6 +13,8 @@ import com.technest.smartled.feature.devices.DevicesScreen
 import com.technest.smartled.feature.devices.DevicesViewModel
 import com.technest.smartled.feature.effects.EffectsScreen
 import com.technest.smartled.feature.effects.EffectsViewModel
+import com.technest.smartled.feature.setup.SetupScreen
+import com.technest.smartled.feature.setup.SetupViewModel
 import com.technest.smartled.feature.settings.SettingsScreen
 import com.technest.smartled.feature.settings.SettingsViewModel
 import com.technest.smartled.feature.settings.ThemeMode
@@ -26,6 +28,7 @@ fun App() {
     val dashboardViewModel = remember { DashboardViewModel(repository) }
     val effectsViewModel = remember { EffectsViewModel(repository) }
     val settingsViewModel = remember { SettingsViewModel(repository) }
+    val setupViewModel = remember { SetupViewModel(repository) }
 
     var themeMode by remember { mutableStateOf(ThemeMode.System) }
 
@@ -79,7 +82,10 @@ fun App() {
                         viewModel = settingsViewModel,
                         onThemeChanged = { mode -> themeMode = mode },
                     )
-                    is Screen.Setup -> {} // handled separately when needed
+                    is Screen.Setup -> SetupScreen(
+                        viewModel = setupViewModel,
+                        onSetupComplete = { currentScreen = Screen.Dashboard },
+                    )
                 }
             }
         }

@@ -507,6 +507,7 @@ Status as of the current commit:
 - DeviceRepositoryImpl: **updated** — now tracks device state (power, brightness, lines) and emits state changes through the connected device flow
 - Effects: **implemented** — EffectsViewModel with effect browsing, descriptions, per-effect parameter editor (speed sliders), apply-to-line and apply-to-all actions, 16 new tests
 - **Settings: implemented** — SettingsViewModel with appearance (theme: System/Dark/Light), device info (read-only), hardware configuration (line count ±, LEDs per line ±, apply button), and about section. SettingsScreen is calm (no ambient motion, per AGENTS.md). 13 new tests. ThemeMode enum added. LedTheme accepts ThemeMode. App.kt wires up theme state and SettingsViewModel.
+- **Setup: implemented** — SetupViewModel with line count configuration, per-line LED count, capability-aware clamping (maxLines/maxLedsPerLine), apply configuration, and completion flow. SetupScreen with device info card, line/LED selectors, error handling, and completion confirmation. 14 new tests. Wired into App.kt navigation.
 
 # 19. Next Major Phase
 
