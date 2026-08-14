@@ -5,14 +5,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.technest.smartled.core.domain.Screen
+import com.technest.smartled.data.repository.DeviceRepositoryImpl
+import com.technest.smartled.data.transport.MockTransport
 import com.technest.smartled.feature.dashboard.DashboardScreen
 import com.technest.smartled.feature.devices.DevicesScreen
+import com.technest.smartled.feature.devices.DevicesViewModel
 import com.technest.smartled.feature.effects.EffectsScreen
 import com.technest.smartled.feature.settings.SettingsScreen
 import com.technest.smartled.ui.theme.LedTheme
 
 @Composable
 fun App() {
+    val transport = remember { MockTransport() }
+    val repository = remember { DeviceRepositoryImpl(transport, transport) }
+    val devicesViewModel = remember { DevicesViewModel(repository) }
+
     LedTheme {
         var currentScreen by remember { mutableStateOf<Screen>(Screen.Dashboard) }
 
@@ -55,7 +62,7 @@ fun App() {
                         onNavigateToSettings = { currentScreen = Screen.Settings },
                     )
                     is Screen.Effects -> EffectsScreen()
-                    is Screen.Devices -> DevicesScreen()
+                    is Screen.Devices -> DevicesScreen(devicesViewModel)
                     is Screen.Settings -> SettingsScreen()
                     is Screen.Setup -> {} // handled separately when needed
                 }

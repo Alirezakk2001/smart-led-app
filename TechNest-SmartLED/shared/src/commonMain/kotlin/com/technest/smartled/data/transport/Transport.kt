@@ -17,3 +17,17 @@ interface Transport {
     suspend fun send(data: ByteArray): Result<Unit>
     fun isConnected(): Boolean
 }
+
+interface TransportScanner {
+    /** Start scanning for advertising devices. Returns a flow of discovered device info. */
+    suspend fun startScan(): Flow<ScannedDevice>
+
+    /** Stop scanning. */
+    suspend fun stopScan()
+}
+
+data class ScannedDevice(
+    val address: String,
+    val name: String,
+    val rssi: Int = 0,
+)

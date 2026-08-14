@@ -1166,6 +1166,7 @@ Status as of the initial commit:
 - Future Music Reactive: reserved
 - BLE/application protocol: **not finalized** (pending hardware/application coordination)
 - App implementation: **App Foundation milestone complete** — KMP project scaffolded, domain models created, device abstraction + repository/transport interfaces defined, theme/design tokens centralized, Compose UI scaffold with navigation and placeholder screens, testing infrastructure established
+- Device Management: **implemented** — MockTransport, DeviceRepositoryImpl, DevicesViewModel, DevicesScreen with scan/connect/disconnect UI, 40 passing tests
 - Exact package structure: **implemented** (see section 33)
 - Exact BLE services/characteristics: **pending hardware/application coordination**
 
