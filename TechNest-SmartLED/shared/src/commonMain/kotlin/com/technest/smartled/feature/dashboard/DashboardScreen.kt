@@ -33,123 +33,191 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-    ) {
-        // Connection status bar
-        ConnectionStatusBar(
-            isConnected = state.isConnected,
-            deviceName = state.deviceName,
-            deviceAddress = state.deviceAddress,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Power & Brightness section
-        PowerBrightnessSection(
-            power = state.power,
-            brightness = state.brightness,
-            isConnected = state.isConnected,
-            isSendingCommand = state.isSendingCommand,
-            onTogglePower = { viewModel.togglePower() },
-            onBrightnessChange = { viewModel.setBrightness(it) },
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Line selector
-        if (state.lineCount > 1) {
-            LineSelector(
-                lineCount = state.lineCount,
-                selectedLineIndex = state.selectedLineIndex,
-                lines = state.lines,
-                onLineSelected = { viewModel.selectLine(it) },
+    // Derive ambient color from the first active line's LED color
+    val ambientColor = remember(state.lines, state.power) {
+        val activeLine = state.lines.firstOrNull { it.enabled && state.power }
+        if (activeLine != null) {
+            Color(
+                activeLine.color.red / 255f,
+                activeLine.color.green / 255f,
+                activeLine.color.blue / 255f,
+                0.03f,
             )
-            Spacer(modifier = Modifier.height(16.dp))
+        } else {
+            Color(0f, 0f, 0f, 0f)
         }
+    }
 
-        // LED Preview
-        LedPreview(
-            lines = state.lines,
-            power = state.power,
-            brightness = state.brightness,
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Ambient background
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp),
+                .fillMaxSize()
+                .background(ambientColor),
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+        ) {
+            // Connection status bar with settings button
+            ConnectionStatusBar(
+                isConnected = state.isConnected,
+                deviceName = state.deviceName,
+                deviceAddress = state.deviceAddress,
+                onNavigateToSettings = onNavigateToSettings,
+            )
 
-        // Line controls
-        if (state.selectedLineIndex != null && state.lines.isNotEmpty()) {
-            val line = state.lines.getOrNull(state.selectedLineIndex)
-            if (line != null) {
-                LineControlsSection(
-                    line = line,
-                    lineIndex = state.selectedLineIndex,
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (state.lines.isEmpty() && !state.isConnected) {
+                // Disconnected empty state
+                DisconnectedHint(onNavigateToSettings = onNavigateToSettings)
+            } else {
+                // Power & Brightness section
+                PowerBrightnessSection(
+                    power = state.power,
+                    brightness = state.brightness,
                     isConnected = state.isConnected,
                     isSendingCommand = state.isSendingCommand,
-                    onColorChange = { color -> viewModel.setLineColor(state.selectedLineIndex, color) },
-                    onEffectChange = { effect -> viewModel.setLineEffect(state.selectedLineIndex, effect) },
-                    onSpeedChange = { speed -> viewModel.setLineSpeed(state.selectedLineIndex, speed) },
-                    onBrightnessChange = { brightness -> viewModel.setLineBrightness(state.selectedLineIndex, brightness) },
+                    onTogglePower = { viewModel.togglePower() },
+                    onBrightnessChange = { viewModel.setBrightness(it) },
                 )
-            }
-        } else if (state.selectedLineIndex == null && state.lines.isNotEmpty()) {
-            // "All" selected - show global controls
-            AllLinesSection(
-                lines = state.lines,
-                isConnected = state.isConnected,
-                isSendingCommand = state.isSendingCommand,
-                onColorChange = { color ->
-                    state.lines.forEach { line ->
-                        viewModel.setLineColor(line.index, color)
-                    }
-                },
-                onEffectChange = { effect ->
-                    state.lines.forEach { line ->
-                        viewModel.setLineEffect(line.index, effect)
-                    }
-                },
-                onSpeedChange = { speed ->
-                    state.lines.forEach { line ->
-                        viewModel.setLineSpeed(line.index, speed)
-                    }
-                },
-            )
-        }
 
-        // Error message
-        if (state.errorMessage != null) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = state.errorMessage!!,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.weight(1f),
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Line selector
+                if (state.lineCount > 1) {
+                    LineSelector(
+                        lineCount = state.lineCount,
+                        selectedLineIndex = state.selectedLineIndex,
+                        lines = state.lines,
+                        onLineSelected = { viewModel.selectLine(it) },
                     )
-                    TextButton(onClick = { viewModel.clearError() }) {
-                        Text("Dismiss")
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // LED Preview
+                LedPreview(
+                    lines = state.lines,
+                    power = state.power,
+                    brightness = state.brightness,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Line controls
+                if (state.selectedLineIndex != null && state.lines.isNotEmpty()) {
+                    val line = state.lines.getOrNull(state.selectedLineIndex)
+                    if (line != null) {
+                        LineControlsSection(
+                            line = line,
+                            lineIndex = state.selectedLineIndex,
+                            isConnected = state.isConnected,
+                            isSendingCommand = state.isSendingCommand,
+                            onColorChange = { color -> viewModel.setLineColor(state.selectedLineIndex, color) },
+                            onEffectChange = { effect -> viewModel.setLineEffect(state.selectedLineIndex, effect) },
+                            onSpeedChange = { speed -> viewModel.setLineSpeed(state.selectedLineIndex, speed) },
+                            onBrightnessChange = { brightness -> viewModel.setLineBrightness(state.selectedLineIndex, brightness) },
+                        )
+                    }
+                } else if (state.selectedLineIndex == null && state.lines.isNotEmpty()) {
+                    // "All" selected - show global controls
+                    AllLinesSection(
+                        lines = state.lines,
+                        isConnected = state.isConnected,
+                        isSendingCommand = state.isSendingCommand,
+                        onColorChange = { color ->
+                            state.lines.forEach { line ->
+                                viewModel.setLineColor(line.index, color)
+                            }
+                        },
+                        onEffectChange = { effect ->
+                            state.lines.forEach { line ->
+                                viewModel.setLineEffect(line.index, effect)
+                            }
+                        },
+                        onSpeedChange = { speed ->
+                            state.lines.forEach { line ->
+                                viewModel.setLineSpeed(line.index, speed)
+                            }
+                        },
+                        onBrightnessChange = { brightness ->
+                            state.lines.forEach { line ->
+                                viewModel.setLineBrightness(line.index, brightness)
+                            }
+                        },
+                    )
+                }
+            }
+
+            // Error message
+            if (state.errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = state.errorMessage!!,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.clearError() }) {
+                            Text("Dismiss")
+                        }
                     }
                 }
             }
-        }
 
-        // Bottom spacer for nav bar
-        Spacer(modifier = Modifier.height(80.dp))
+            // Bottom spacer for nav bar
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+}
+
+@Composable
+private fun DisconnectedHint(onNavigateToSettings: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "No Device Connected",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Connect to a device from the Devices screen to control your LED lights.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onNavigateToSettings) {
+                Text("Go to Devices")
+            }
+        }
     }
 }
 
@@ -158,6 +226,7 @@ private fun ConnectionStatusBar(
     isConnected: Boolean,
     deviceName: String,
     deviceAddress: String,
+    onNavigateToSettings: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -210,6 +279,14 @@ private fun ConnectionStatusBar(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            // Settings icon button
+            IconButton(onClick = onNavigateToSettings) {
+                Text(
+                    text = "\u2699",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -510,6 +587,7 @@ private fun AllLinesSection(
     onColorChange: (RgbColor) -> Unit,
     onEffectChange: (EffectId) -> Unit,
     onSpeedChange: (Int) -> Unit,
+    onBrightnessChange: (Brightness) -> Unit,
 ) {
     // Use the first line's state as a reference for "All"
     val referenceLine = lines.firstOrNull() ?: return
@@ -561,6 +639,23 @@ private fun AllLinesSection(
             Slider(
                 value = referenceLine.speed.toFloat(),
                 onValueChange = { onSpeedChange(it.toInt()) },
+                valueRange = 0f..255f,
+                steps = 50,
+                enabled = isConnected && !isSendingCommand,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Brightness: ${referenceLine.brightness.toPercent()}%",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Slider(
+                value = referenceLine.brightness.value.toFloat(),
+                onValueChange = { onBrightnessChange(Brightness(it.toInt())) },
                 valueRange = 0f..255f,
                 steps = 50,
                 enabled = isConnected && !isSendingCommand,
