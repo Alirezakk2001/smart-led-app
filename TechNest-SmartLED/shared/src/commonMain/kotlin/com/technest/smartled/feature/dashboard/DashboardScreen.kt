@@ -112,21 +112,22 @@ fun DashboardScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Line controls
-                if (state.selectedLineIndex != null && state.lines.isNotEmpty()) {
-                    val line = state.lines.getOrNull(state.selectedLineIndex)
+                val selectedLineIndex = state.selectedLineIndex
+                if (selectedLineIndex != null && state.lines.isNotEmpty()) {
+                    val line = state.lines.getOrNull(selectedLineIndex)
                     if (line != null) {
                         LineControlsSection(
                             line = line,
-                            lineIndex = state.selectedLineIndex,
+                            lineIndex = selectedLineIndex,
                             isConnected = state.isConnected,
                             isSendingCommand = state.isSendingCommand,
-                            onColorChange = { color -> viewModel.setLineColor(state.selectedLineIndex, color) },
-                            onEffectChange = { effect -> viewModel.setLineEffect(state.selectedLineIndex, effect) },
-                            onSpeedChange = { speed -> viewModel.setLineSpeed(state.selectedLineIndex, speed) },
-                            onBrightnessChange = { brightness -> viewModel.setLineBrightness(state.selectedLineIndex, brightness) },
+                            onColorChange = { color -> viewModel.setLineColor(selectedLineIndex, color) },
+                            onEffectChange = { effect -> viewModel.setLineEffect(selectedLineIndex, effect) },
+                            onSpeedChange = { speed -> viewModel.setLineSpeed(selectedLineIndex, speed) },
+                            onBrightnessChange = { brightness -> viewModel.setLineBrightness(selectedLineIndex, brightness) },
                         )
                     }
-                } else if (state.selectedLineIndex == null && state.lines.isNotEmpty()) {
+                } else if (selectedLineIndex == null && state.lines.isNotEmpty()) {
                     // "All" selected - show global controls
                     AllLinesSection(
                         lines = state.lines,
