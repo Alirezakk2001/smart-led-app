@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import com.technest.smartled.feature.settings.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     background = LedColors.DarkBackground,
@@ -34,9 +35,15 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun LedTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.System,
     content: @Composable () -> Unit,
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        ThemeMode.System -> systemDark
+        ThemeMode.Dark -> true
+        ThemeMode.Light -> false
+    }
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(

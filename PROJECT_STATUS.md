@@ -340,760 +340,94 @@ If already configured, skip setup and enter the normal application.
 
 Hardware configuration should preferably be stored on the device.
 
-The app may cache it locally, but device-reported configuration is authoritative after synchronization.
-
-Example:
-
-```text
-ESP32/device
-  └── lineCount = 3
-  └── line1.ledCount = 60
-  └── line2.ledCount = 120
-  └── line3.ledCount = 60
-```
-
-When another device/app connects, it can read the same configuration.
+The app may cache it locally, but device-persisted configuration is authoritative.
 
 ---
 
-# 12. Configuration Changes
+# 12. State Synchronization
 
-Changing hardware configuration should be explicit.
-
-Example:
-
-```text
-Hardware Configuration
-
-Lines: 4
-
-Line 1: 60 LEDs
-Line 2: 60 LEDs
-Line 3: 60 LEDs
-Line 4: 60 LEDs
-
-[Apply]
-```
-
-The application must:
-
-1. Validate against device capabilities.
-2. Send configuration.
-3. Wait for confirmation.
-4. Refresh configuration/state.
-5. Notify the user if restart/reinitialization is required.
-
-Do not assume a configuration change succeeded merely because the BLE write succeeded.
-
----
-
-# 13. BLE / Protocol
-
-The exact BLE service/characteristic layout and command protocol are **not finalized yet**.
-
-Do not invent protocol values during implementation.
-
-The eventual architecture should separate:
-
-```text
-BLE Transport
-Protocol Encoder/Decoder
-Device Repository
-Domain
-UI
-```
-
-UI must never directly construct raw BLE packets.
-
----
-
-# 14. Synchronization Model
-
-Desired initial synchronization:
+When connected:
 
 ```text
 Connect
  ↓
-Capabilities
+Read capabilities
  ↓
-Configuration
+Read configuration
  ↓
-Current State
+Read current state
  ↓
-UI
+Expose confirmed state to UI
 ```
 
-Runtime command:
+When a command is sent:
 
 ```text
-User action
+User Action
  ↓
-Domain command
- ↓
-Repository
- ↓
-Protocol
- ↓
-Transport
+Command
  ↓
 Device
  ↓
-Confirmation/state update
+Confirmation / updated state
  ↓
-Application state
+App State
  ↓
 UI
 ```
 
-The application must distinguish:
-
-- confirmed state
-- pending changes
-- disconnected/unknown state
+The app does not treat sent commands as confirmed state.
 
 ---
 
-# 15. Offline / Disconnected Behavior
+# 13. Offline / Disconnected Behavior
 
 When disconnected:
 
-- display disconnected status
-- retain last known state where useful
-- keep preview functional where possible
-- allow local UI exploration
-- distinguish local/pending state from hardware-confirmed state
-
-On reconnect:
-
-```text
-Reconnect
- ↓
-Re-read capabilities
- ↓
-Re-read configuration
- ↓
-Re-read state
-```
+- the UI shows a clear disconnected state
+- the last known state is retained where useful
+- the LED preview remains usable
+- pending changes are distinguished from confirmed device state
+- reconnection triggers synchronization
 
 ---
 
-# 16. Main Screens
+# 14. Error Handling
 
-## Dashboard
-
-Primary screen.
-
-Contains:
-
-- device/connection status
-- LED preview
-- power
-- brightness
-- line selection
-- current effect
-- effect parameters
-- color where applicable
-- speed where applicable
-
-This screen gets the strongest ambient visual treatment.
-
----
-
-## Effects
-
-Contains:
-
-- effect list
-- effect cards
-- preview
-- selected state
-- supported parameters
-
-Effects must be data-driven.
-
-Adding a new hardware effect should not require rewriting the entire screen.
-
----
-
-## Effect Editor
-
-Dynamic controls based on effect capabilities.
-
-Potential parameters:
-
-- color
-- speed
-- brightness
-- direction
-- sensitivity
-- effect-specific parameters
-
-No universal hard-coded parameter set should be assumed.
-
----
-
-## Devices
-
-Contains:
-
-- scan
-- discovered devices
-- connect
-- disconnect
-- device status
-- device identity
-- rename/forget where supported
-
-The app should conceptually support multiple devices.
-
----
-
-## Lines / Strips
-
-Controls are generated dynamically.
-
-Example:
-
-```text
-[All] [1] [2] [3] ... [N]
-```
-
-The number of controls is based on device configuration.
-
----
-
-## Hardware Configuration
-
-Contains:
-
-- number of LED lines
-- LED count per line
-- supported LED type/configuration
-- hardware-specific options exposed by capabilities
-
-This is a settings/configuration area, not a primary daily control surface.
-
----
-
-## Settings
-
-Sections:
-
-```text
-Appearance
-Animation
-Ambient UI
-Device
-Hardware
-Advanced
-About
-```
-
-Settings screens should remain calm and mostly static.
-
----
-
-# 17. Navigation
-
-## Mobile
-
-Preferred navigation:
-
-```text
-Home
-Effects
-Devices
-Settings
-```
-
-Additional screens can be reached from these sections.
-
-## Desktop
-
-Preferred layout:
-
-```text
-Sidebar
- ├── Dashboard
- ├── Effects
- ├── Devices
- ├── Scheduler
- ├── Music
- └── Settings
-```
-
-Future sections may be hidden/disabled until implemented.
-
----
-
-# 18. Visual Design
-
-## Design Direction
-
-**Ambient Dark UI**
-
-The UI should be:
-
-- dark
-- minimal
-- modern
-- ambient
-- reactive
-- restrained
-
-Avoid:
-
-- overly gamified visuals
-- excessive neon
-- cyberpunk clutter
-- constant RGB cycling
-- unnecessary decorative animation
-
----
-
-# 19. Base Design Tokens
-
-Suggested dark palette:
-
-```text
-Background       #0B0D10
-Surface          #12151A
-Surface Elevated #181C22
-
-Text Primary     #F5F7FA
-Text Secondary   #A8AFBA
-Text Disabled    #626974
-```
-
-These must eventually become centralized design tokens.
-
-Do not scatter raw color literals throughout UI code.
-
----
-
-# 20. Dynamic Accent
-
-The application should derive accent colors from the actual LED state.
-
-Example:
-
-```text
-LED red
- → red accent
-
-LED blue
- → blue accent
-
-LED purple
- → purple accent
-```
-
-The system should derive a palette:
-
-```text
-Accent
-Accent Soft
-Accent Strong
-Glow
-Ambient
-```
-
-The raw LED color must not blindly be used for text if it causes poor contrast.
-
----
-
-# 21. Ambient Background
-
-Dashboard/Effects may contain a very subtle ambient background.
-
-Suggested implementation concepts:
-
-- radial gradients
-- blur
-- low opacity
-- slow transitions
-- multiple color sources
-
-Starting token targets:
-
-```text
-Ambient background ≈ 3%
-Glow ≈ 6%
-```
-
-These are tunable values.
-
-The effect should be felt, not obviously seen as a gradient layer.
-
----
-
-# 22. Multiple Line Ambient Behavior
-
-If lines have different colors:
-
-```text
-Line 1 → Red
-Line 2 → Blue
-Line 3 → Purple
-Line 4 → Green
-```
-
-the app should aggregate these into an ambient palette.
-
-Transitions should be slow and smooth.
-
-Do not rapidly cycle the whole UI through line colors.
-
----
-
-# 23. Effect-Aware Ambient Behavior
+Errors should be represented as user-readable states, not raw exceptions.
 
 Examples:
 
 ```text
-Static
-→ stable glow
-
-Pulse
-→ subtle slow intensity modulation
-
-Rainbow
-→ slow color drift
-
-Fire
-→ warm slow movement
-
-Ocean
-→ slow cyan/blue movement
-```
-
-Ambient animation must be calmer than the hardware effect.
-
----
-
-# 24. Calm Utility Screens
-
-These should not receive full ambient animation:
-
-- Settings
-- Hardware Configuration
-- Devices
-- About
-- Advanced configuration
-
-They should prioritize:
-
-- readability
-- stable surfaces
-- hierarchy
-- accessibility
-
----
-
-# 25. LED Preview
-
-Preview should represent the actual configured hardware.
-
-Dynamic dimensions:
-
-```text
-number of lines
-LED count per line
-```
-
-Each LED can be represented as:
-
-```text
-core
-+
-subtle glow
-```
-
-Preview should support:
-
-- power
-- brightness
-- colors
-- effects
-- line selection
-
-It should be usable without a live device where practical.
-
----
-
-# 26. Animation System
-
-Three categories:
-
-### Micro UI
-
-```text
-150–250ms
-```
-
-For normal UI transitions.
-
-### Ambient
-
-```text
-2–8s
-```
-
-For background/glow transitions.
-
-### Effect Preview
-
-Driven by selected effect, but intentionally calmer than hardware.
-
-Prefer smooth easing.
-
-Avoid excessive linear animation.
-
-Support:
-
-```text
-Reduced Motion
-```
-
----
-
-# 27. Themes
-
-Support:
-
-- System
-- Light
-- Dark
-
-Dark is the primary design.
-
-Suggested light tokens:
-
-```text
-Background #F6F7F9
-Surface    #FFFFFF
-Text       #15181D
-```
-
-Ambient effects should be significantly weaker in Light mode.
-
----
-
-# 28. Accessibility
-
-Must consider:
-
-- contrast
-- readable typography
-- touch target size
-- keyboard interaction
-- focus states
-- Reduced Motion
-- color-independent state communication
-- clear connection states
-
----
-
-# 29. Responsive UI
-
-Mobile:
-
-```text
-single/compact column
-touch-first
-mobile navigation
-```
-
-Tablet:
-
-```text
-multi-column where appropriate
-```
-
-Desktop:
-
-```text
-sidebar
-multi-column
-resizable window
-mouse + keyboard
-```
-
-Use shared CMP components and adaptive layouts.
-
----
-
-# 30. Persistence
-
-## Device-side
-
-Potentially:
-
-- LED line count
-- LED counts
-- hardware configuration
-- device settings
-
-## App-side
-
-Potentially:
-
-- remembered devices
-- theme
-- ambient preference
-- reduced motion
-- last-known state
-- UI preferences
-
-Device-confirmed state must not be confused with local cache.
-
----
-
-# 31. Error Handling
-
-Expected errors include:
-
-- scan failure
-- connection failure
-- disconnect
-- timeout
-- command rejection
-- invalid configuration
-- unsupported feature
-- protocol mismatch
-- firmware incompatibility
-
-User-facing errors should be actionable.
-
-Example:
-
-```text
 Unable to connect
-
 [Retry]
 ```
 
-Avoid showing raw BLE/protocol exceptions to normal users.
-
----
-
-# 32. Versioning
-
-The design must support:
-
 ```text
-App Version
-Firmware Version
-Protocol Version
-Capability Version
+Configuration rejected
+The device supports up to 4 lines.
 ```
 
-Compatibility checks should occur before unsupported operations.
-
-The app should not assume all devices use the latest firmware/protocol.
-
----
-# 33. Architecture Status
-
-### Implemented structure
-
-The package/module structure is implemented as follows:
-
-```
-shared/src/commonMain/kotlin/com/technest/smartled/
-├── App.kt                          ← Compose UI scaffold + NavigationBar
-├── Platform.kt                     ← expect declarations
-├── core/
-│   ├── model/                      ← Domain models (hardware-agnostic)
-│   │   ├── Brightness.kt
-│   │   ├── Color.kt
-│   │   ├── Device.kt
-│   │   ├── DeviceCapabilities.kt
-│   │   ├── DeviceConfiguration.kt
-│   │   ├── DeviceState.kt
-│   │   ├── EffectId.kt
-│   │   ├── EffectParameter.kt
-│   │   └── LedLineState.kt
-│   └── domain/
-│       └── Navigation.kt           ← Screen sealed class
-├── data/
-│   ├── repository/
-│   │   └── DeviceRepository.kt     ← Repository interface
-│   └── transport/
-│       └── Transport.kt            ← Transport abstraction interface
-├── feature/
-│   ├── dashboard/DashboardScreen.kt
-│   ├── devices/DevicesScreen.kt
-│   ├── effects/EffectsScreen.kt
-│   ├── settings/SettingsScreen.kt
-│   └── setup/SetupScreen.kt
-└── ui/theme/
-    ├── Color.kt                    ← Centralized color tokens
-    ├── Theme.kt                    ← M3 Dark/Light color schemes
-    └── Type.kt                     ← Typography styles
-```
-
-### Confirmed direction (unchanged)
-
-```text
-Compose UI
- ↓
-ViewModel / Presentation
- ↓
-Domain / Use Cases
- ↓
-Repository Interfaces
- ↓
-Protocol / Data
- ↓
-Transport
- ↓
-Hardware
-```
-
-The next architectural layer to implement is the presentation/ViewModel layer.
+No raw protocol/BLE errors should be exposed to normal users.
 
 ---
 
-# 34. Planned Project Structure
+# 15. Versioning and Compatibility
 
-Initial target:
+Planned:
 
-```text
-composeApp/
+- app version
+- firmware version
+- protocol version
+- device capability version
 
-core/
-  common/
-  model/
-  domain/
+Protocol changes must be versioned.
 
-data/
-  ble/
-  protocol/
-  repository/
-  local/
-
-feature/
-  dashboard/
-  devices/
-  effects/
-  strips/
-  scheduler/
-  music/
-  settings/
-  setup/
-
-platform/
-  android/
-  ios/
-  desktop/
-```
-
-This is a direction, not a requirement to create every directory before it is needed.
+Compatibility checks should happen before unsupported operations.
 
 ---
 
-# 35. Testing Strategy
+# 16. Testing Strategy
 
 Each meaningful task must be verified before moving to the next task.
 
@@ -1129,7 +463,7 @@ Important test areas:
 
 ---
 
-# 36. Git / Commit Strategy
+# 17. Git / Commit Strategy
 
 Keep commits logical and focused.
 
@@ -1149,9 +483,9 @@ Do not mix unrelated changes.
 
 ---
 
-# 37. Current Implementation State
+# 18. Current Implementation State
 
-Status as of the initial commit:
+Status as of the current commit:
 
 - Product concept: defined
 - Main screens: defined
@@ -1171,10 +505,10 @@ Status as of the initial commit:
 - Exact BLE services/characteristics: **pending hardware/application coordination**
 - Dashboard: **implemented** — DashboardViewModel with power/brightness/line/effect/color/speed controls, line selector (All + individual), LED preview, color picker, effect dropdown, 15 new tests
 - DeviceRepositoryImpl: **updated** — now tracks device state (power, brightness, lines) and emits state changes through the connected device flow
-
 - Effects: **implemented** — EffectsViewModel with effect browsing, descriptions, per-effect parameter editor (speed sliders), apply-to-line and apply-to-all actions, 16 new tests
+- **Settings: implemented** — SettingsViewModel with appearance (theme: System/Dark/Light), device info (read-only), hardware configuration (line count ±, LEDs per line ±, apply button), and about section. SettingsScreen is calm (no ambient motion, per AGENTS.md). 13 new tests. ThemeMode enum added. LedTheme accepts ThemeMode. App.kt wires up theme state and SettingsViewModel.
 
-# 38. Next Major Phase
+# 19. Next Major Phase
 
 Before implementation, define the **App ↔ Hardware Contract**.
 
@@ -1239,7 +573,7 @@ This phase must specify:
 
 No implementation should invent these details before they are agreed with the hardware side.
 
-# 39. Definition of Done for Initial App Foundation
+# 20. Definition of Done for Initial App Foundation
 
 The initial foundation is considered complete when:
 
@@ -1260,7 +594,7 @@ The initial foundation is considered complete when:
 
 ---
 
-# 40. Project Rules Summary
+# 21. Project Rules Summary
 
 The application must remain:
 
@@ -1288,3 +622,4 @@ No distracting ambient animation.
 No invented protocol details.
 Test after meaningful tasks.
 Commit only after successful verification.
+```
