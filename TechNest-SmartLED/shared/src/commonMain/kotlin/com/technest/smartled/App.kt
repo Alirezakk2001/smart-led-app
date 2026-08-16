@@ -6,7 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.technest.smartled.core.domain.Screen
 import com.technest.smartled.data.repository.DeviceRepositoryImpl
-import com.technest.smartled.data.transport.MockTransport
+import com.technest.smartled.data.transport.TransportConnection
+import com.technest.smartled.data.transport.createDefaultTransportConnection
 import com.technest.smartled.feature.dashboard.DashboardScreen
 import com.technest.smartled.feature.dashboard.DashboardViewModel
 import com.technest.smartled.feature.devices.DevicesScreen
@@ -21,9 +22,15 @@ import com.technest.smartled.feature.settings.ThemeMode
 import com.technest.smartled.ui.theme.LedTheme
 
 @Composable
-fun App() {
-    val transport = remember { MockTransport() }
-    val repository = remember { DeviceRepositoryImpl(transport, transport) }
+fun App(
+    transportConnection: TransportConnection? = null,
+) {
+    val activeTransportConnection = remember(transportConnection) {
+        transportConnection ?: createDefaultTransportConnection()
+    }
+    val repository = remember(activeTransportConnection) {
+        DeviceRepositoryImpl(activeTransportConnection.transport, activeTransportConnection.scanner)
+    }
     val devicesViewModel = remember { DevicesViewModel(repository) }
     val dashboardViewModel = remember { DashboardViewModel(repository) }
     val effectsViewModel = remember { EffectsViewModel(repository) }

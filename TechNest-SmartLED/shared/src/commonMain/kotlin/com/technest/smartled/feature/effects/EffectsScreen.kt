@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.technest.smartled.core.model.EffectId
+import com.technest.smartled.core.model.EffectParameter
 
 @Composable
 fun EffectsScreen(
@@ -63,6 +65,7 @@ fun EffectsScreen(
             Spacer(modifier = Modifier.height(12.dp))
             EffectParameterEditor(
                 parameters = state.editingParameters,
+                lineIndices = state.lineIndices,
                 isConnected = state.isConnected,
                 isSendingCommand = state.isSendingCommand,
                 onParameterChange = { index, value -> viewModel.updateParameter(index, value) },
@@ -223,6 +226,7 @@ private fun EffectIndicator(effectId: EffectId) {
 @Composable
 private fun EffectParameterEditor(
     parameters: List<EffectParameter>,
+    lineIndices: List<Int>,
     isConnected: Boolean,
     isSendingCommand: Boolean,
     onParameterChange: (Int, Int) -> Unit,
@@ -266,37 +270,33 @@ private fun EffectParameterEditor(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
+            LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedButton(
-                    onClick = { onApplyToLine(0) },
-                    enabled = isConnected && !isSendingCommand,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    if (isSendingCommand) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text("Apply to Line 1")
+                items(lineIndices, key = { it }) { lineIndex ->
+                    OutlinedButton(
+                        onClick = { onApplyToLine(lineIndex) },
+                        enabled = isConnected && !isSendingCommand,
+                    ) {
+                        Text("Line " + (lineIndex + 1).toString())
                     }
                 }
-                Button(
-                    onClick = onApplyToAll,
-                    enabled = isConnected && !isSendingCommand,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    if (isSendingCommand) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text("Apply to All")
+
+                item {
+                    Button(
+                        onClick = onApplyToAll,
+                        enabled = isConnected && !isSendingCommand && lineIndices.isNotEmpty(),
+                    ) {
+                        if (isSendingCommand) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("All Lines")
+                        }
                     }
                 }
             }

@@ -131,6 +131,25 @@ class EffectsViewModelTest {
     }
 
     @Test
+    fun `lineIndices follow connected device configuration`() = runTest(StandardTestDispatcher()) {
+        val transport = MockTransport()
+        val repository = DeviceRepositoryImpl(transport, transport)
+        val scope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+        val viewModel = EffectsViewModel(repository, scope = scope)
+
+        repository.scan()
+        advanceUntilIdle()
+        repository.connect("00:11:22:33:44:01")
+        advanceUntilIdle()
+
+        val config = DeviceConfiguration(lineCount = 3, ledsPerLine = listOf(60, 120, 30))
+        repository.applyConfiguration(config)
+        advanceUntilIdle()
+
+        assertEquals(listOf(0, 1, 2), viewModel.uiState.value.lineIndices)
+    }
+
+    @Test
     fun `applyToLine without connection shows error`() = runTest(StandardTestDispatcher()) {
         val viewModel = createViewModel()
         viewModel.selectEffect(EffectId.Rainbow)

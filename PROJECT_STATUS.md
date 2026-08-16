@@ -494,22 +494,52 @@ Status as of the current commit:
 - Dynamic LED count concept: defined
 - Hardware-independent architecture: defined
 - Device/capability model: **implemented** (Device, DeviceCapabilities, DeviceConfiguration, DeviceState, EffectId, EffectParameter, LedLineState, Brightness, RgbColor)
-- Ambient UI concept: defined
+- Ambient UI concept: implemented
 - LED preview concept: defined
 - Future Scheduler: reserved
 - Future Music Reactive: reserved
 - BLE/application protocol: **not finalized** (pending hardware/application coordination)
 - App implementation: **App Foundation milestone complete** — KMP project scaffolded, domain models created, device abstraction + repository/transport interfaces defined, theme/design tokens centralized, Compose UI scaffold with navigation and placeholder screens, testing infrastructure established
-- Device Management: **implemented** — MockTransport, DeviceRepositoryImpl, DevicesViewModel, DevicesScreen with scan/connect/disconnect UI, 40 passing tests
-- Exact package structure: **implemented** (see section 33)
-- Exact BLE services/characteristics: **pending hardware/application coordination**
+- Device Management: **implemented** — DeviceRepositoryImpl, DevicesViewModel, DevicesScreen with scan/connect/disconnect UI, Android BLE scan/connect transport, MockTransport for tests, 40 passing tests
+- Exact package structure: **implemented** (see section 34)
+- Exact BLE services/characteristics: **pending hardware/application coordination** — Android can scan/connect over BLE, but read/write/notify protocol details are intentionally not implemented yet
 - Dashboard: **implemented** — DashboardViewModel with power/brightness/line/effect/color/speed controls, line selector (All + individual), LED preview, color picker, effect dropdown, 15 new tests
 - DeviceRepositoryImpl: **updated** — now tracks device state (power, brightness, lines) and emits state changes through the connected device flow
-- Effects: **implemented** — EffectsViewModel with effect browsing, descriptions, per-effect parameter editor (speed sliders), apply-to-line and apply-to-all actions, 16 new tests
+- Effects: **implemented** — EffectsViewModel with effect browsing, descriptions, per-effect parameter editor (speed sliders), dynamic apply-to-line and apply-to-all actions, 17 new tests
 - **Settings: implemented** — SettingsViewModel with appearance (theme: System/Dark/Light), device info (read-only), hardware configuration (line count ±, LEDs per line ±, apply button), and about section. SettingsScreen is calm (no ambient motion, per AGENTS.md). 13 new tests. ThemeMode enum added. LedTheme accepts ThemeMode. App.kt wires up theme state and SettingsViewModel.
 - **Setup: implemented** — SetupViewModel with line count configuration, per-line LED count, capability-aware clamping (maxLines/maxLedsPerLine), apply configuration, and completion flow. SetupScreen with device info card, line/LED selectors, error handling, and completion confirmation. 14 new tests. Wired into App.kt navigation.
 
-# 19. Next Major Phase
+- **Dynamic Accent & Ambient UI**: implemented — ColorEngine, DynamicAccent palette, AmbientBackground composable, DynamicAccentProvider (CompositionLocal), DashboardScreen updated with ambient background, 12 new tests
+
+# 19. Dynamic Accent & Ambient UI
+
+As of the current commit:
+
+- **ColorEngine**: Implemented — pure Kotlin utility that derives a DynamicAccent palette from LED line state. Handles effect-aware colors (Static, Rainbow, Breathing, Fire, Twinkle, Meteor, Wave, Police, Gradient), multi-line blending in linear sRGB space, brightness-aware dimming, and saturation boosting for readability. Located at `ui/theme/ColorEngine.kt`.
+
+- **DynamicAccent**: Data class with five color levels — accent, accentSoft, accentVivid, glow, ambient — each designed for different UI roles. Defaults to a neutral cyan when no LED state is active.
+
+- **AmbientBackground**: Composable that renders a subtle animated radial gradient behind content. Uses ~3% alpha ambient color with slow figure-8 drift. Two overlapping gradient sources for multi-line color richness. Located at `ui/ambient/AmbientBackground.kt`.
+
+- **DynamicAccentProvider**: CompositionLocal-based provider (LocalDynamicAccent) that makes the current accent palette available to descendant composables. Components can opt in to dynamic accent by reading LocalDynamicAccent. Utility screens (Settings, etc.) remain calm by default. Located at `ui/ambient/DynamicAccentProvider.kt`.
+
+- **DashboardScreen**: Updated to use ColorEngine + AmbientBackground + DynamicAccentProvider. The old hard-coded ambient color derivation was replaced with the full ColorEngine pipeline.
+
+- **ColorEngine tests**: 12 tests covering inactive states (no lines, power off, disabled), per-color accent derivation (red, green, blue), brightness dimming, multi-line blending, fire effect warmth, palette variant alpha hierarchy, and DynamicAccent default values. Located at `ui/theme/ColorEngineTest.kt`.
+
+
+# 20. Real Device Discovery & Connection
+
+As of the current working tree:
+
+- **TransportConnection**: added as the platform-provided pair of `Transport` + `TransportScanner`, so shared UI no longer constructs `MockTransport` directly.
+- **AndroidBleTransport**: added real Android BLE scanning and GATT connection by discovered address. Scanning is bounded to 10 seconds and deduplicates devices by address.
+- **Android permissions**: app manifest and `MainActivity` now request the required scan/connect permissions for Android 12+ and location permission for older Android BLE scanning.
+- **Protocol boundary**: `send(data)` intentionally returns `BLE protocol is not implemented yet` until services, characteristics, framing, commands, notifications, and acknowledgements are defined.
+- **Desktop/iOS**: return an explicit unsupported transport for now instead of fake devices. Platform BLE implementations remain pending.
+
+
+# 21. Next Major Phase
 
 Before implementation, define the **App ↔ Hardware Contract**.
 
@@ -574,7 +604,7 @@ This phase must specify:
 
 No implementation should invent these details before they are agreed with the hardware side.
 
-# 20. Definition of Done for Initial App Foundation
+# 22. Definition of Done for Initial App Foundation
 
 The initial foundation is considered complete when:
 
@@ -595,7 +625,7 @@ The initial foundation is considered complete when:
 
 ---
 
-# 21. Project Rules Summary
+# 23. Project Rules Summary
 
 The application must remain:
 

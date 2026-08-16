@@ -25,6 +25,7 @@ data class EffectsUiState(
     val effects: List<EffectInfo> = emptyList(),
     val selectedEffectId: EffectId? = null,
     val editingParameters: List<EffectParameter> = emptyList(),
+    val lineIndices: List<Int> = emptyList(),
     val isConnected: Boolean = false,
     val isSendingCommand: Boolean = false,
     val errorMessage: String? = null,
@@ -76,7 +77,12 @@ class EffectsViewModel(
 
         scope.launch {
             repository.observeConnectedDevice().collect { device ->
-                _uiState.update { it.copy(isConnected = device != null) }
+                _uiState.update {
+                    it.copy(
+                        isConnected = device != null,
+                        lineIndices = device?.state?.lines?.map { line -> line.index }.orEmpty(),
+                    )
+                }
             }
         }
     }

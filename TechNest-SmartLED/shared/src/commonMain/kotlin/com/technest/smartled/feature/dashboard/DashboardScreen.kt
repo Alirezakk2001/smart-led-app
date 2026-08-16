@@ -24,6 +24,9 @@ import com.technest.smartled.core.model.EffectId
 import com.technest.smartled.core.model.LedLineState
 import com.technest.smartled.core.model.RgbColor
 import com.technest.smartled.ui.theme.LedColors
+import com.technest.smartled.ui.theme.ColorEngine
+import com.technest.smartled.ui.ambient.AmbientBackground
+import com.technest.smartled.ui.ambient.DynamicAccentProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,28 +36,13 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    // Derive ambient color from the first active line's LED color
-    val ambientColor = remember(state.lines, state.power) {
-        val activeLine = state.lines.firstOrNull { it.enabled && state.power }
-        if (activeLine != null) {
-            Color(
-                activeLine.color.red / 255f,
-                activeLine.color.green / 255f,
-                activeLine.color.blue / 255f,
-                0.03f,
-            )
-        } else {
-            Color(0f, 0f, 0f, 0f)
-        }
+    // Compute dynamic accent palette from LED state
+    val accent = remember(state.lines, state.power) {
+        ColorEngine.compute(state.lines, state.power)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Ambient background
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(ambientColor),
-        )
+    DynamicAccentProvider(accent = accent) {
+        AmbientBackground(accent = accent) {
 
         Column(
             modifier = Modifier
@@ -185,6 +173,7 @@ fun DashboardScreen(
 
             // Bottom spacer for nav bar
             Spacer(modifier = Modifier.height(80.dp))
+        }
         }
     }
 }
